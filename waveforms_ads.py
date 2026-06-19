@@ -226,6 +226,11 @@ class WaveFormsADS:
             DwfStateDone: "Done",
         }
         return names.get(state, f"State({state})")
+    
+    def _auto_configure_set(self, config: int = AUTOCFG_ENABLE) -> None:
+        """Set auto configure (on, off, dynamic)."""
+        self._auto_configure = config
+        self._dwf.FDwfDeviceAutoConfigureSet(self._hdwf, self._auto_configure)
 
     # ------------------------------------------------------------------
     # Device enumeration (static helpers)
@@ -840,6 +845,13 @@ class WaveFormsADS:
             "FDwfAnalogOutConfigure(start)",
         )
 
+    def analog_out_dynamic_configure(self, channel: int = 0) -> None:
+        """Configure Analog Out generator on *channel* without changing current state."""
+        self._check(
+            self._dwf.FDwfAnalogOutConfigure(self._hdwf, channel, 3),
+            "FDwfAnalogOutConfigure(apply)",
+        )
+
     def analog_out_stop(self, channel: int = 0) -> None:
         """Stop the Analog Out generator on *channel*."""
         self._check(
@@ -984,12 +996,14 @@ class WaveFormsADS:
     ) -> None:
         """Configure *channel* to output a triangle wave (does not start)."""
         self.analog_out_reset(channel)
+        self._auto_configure_set(config=AUTOCFG_DISABLE)
         self.analog_out_enable_node(channel, AnalogOutNodeCarrier, 1)
         self.analog_out_set_function(channel, funcTriangle)
         self.analog_out_set_frequency(channel, freq_hz)
         self.analog_out_set_amplitude(channel, amplitude_v)
         self.analog_out_set_offset(channel, offset_v)
         self.analog_out_set_phase(channel, phase_deg)
+        self._auto_configure_set(config=AUTOCFG_ENABLE)
 
     def analog_out_set_square(
         self,

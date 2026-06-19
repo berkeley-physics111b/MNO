@@ -233,6 +233,7 @@ def configure_dac_triangle(dev, ch, v_min, v_pp, scan_freq_hz,
     # Should it be set repeats is n_repeats...? n_repeats=0 -> inf run
     dev.analog_out_set_run_time(ch, n_repeats / scan_freq_hz)
     dev.analog_out_set_repeat(ch, 1)   # repeat the run block once
+    dev.analog_out_dynamic_configure(ch)
 
 
 # ---------------------------------------------------------------------------
