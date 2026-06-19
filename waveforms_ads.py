@@ -996,14 +996,12 @@ class WaveFormsADS:
     ) -> None:
         """Configure *channel* to output a triangle wave (does not start)."""
         self.analog_out_reset(channel)
-        self._auto_configure_set(config=AUTOCFG_DISABLE)
         self.analog_out_enable_node(channel, AnalogOutNodeCarrier, 1)
         self.analog_out_set_function(channel, funcTriangle)
         self.analog_out_set_frequency(channel, freq_hz)
         self.analog_out_set_amplitude(channel, amplitude_v)
         self.analog_out_set_offset(channel, offset_v)
         self.analog_out_set_phase(channel, phase_deg)
-        self._auto_configure_set(config=AUTOCFG_ENABLE)
 
     def analog_out_set_square(
         self,
