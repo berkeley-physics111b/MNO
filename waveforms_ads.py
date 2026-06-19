@@ -95,6 +95,8 @@ trigsrcDetectorAnalogIn  = 2
 trigsrcDetectorDigitalIn = 3
 trigsrcAnalogIn          = 4
 trigsrcDigitalIn         = 5
+trigsrcAnalogOut1        = 7
+trigsrcAnalogOut2        = 8
 trigsrcExternal1         = 11
 
 # Trigger types
@@ -967,6 +969,23 @@ class WaveFormsADS:
         self.analog_out_reset(channel)
         self.analog_out_enable_node(channel, AnalogOutNodeCarrier, 1)
         self.analog_out_set_function(channel, funcSine)
+        self.analog_out_set_frequency(channel, freq_hz)
+        self.analog_out_set_amplitude(channel, amplitude_v)
+        self.analog_out_set_offset(channel, offset_v)
+        self.analog_out_set_phase(channel, phase_deg)
+    
+    def analog_out_set_triangle(
+        self,
+        channel: int,
+        freq_hz: float,
+        amplitude_v: float = 1.0,
+        offset_v: float = 0.0,
+        phase_deg: float = 0.0,
+    ) -> None:
+        """Configure *channel* to output a triangle wave (does not start)."""
+        self.analog_out_reset(channel)
+        self.analog_out_enable_node(channel, AnalogOutNodeCarrier, 1)
+        self.analog_out_set_function(channel, funcTriangle)
         self.analog_out_set_frequency(channel, freq_hz)
         self.analog_out_set_amplitude(channel, amplitude_v)
         self.analog_out_set_offset(channel, offset_v)
