@@ -313,7 +313,16 @@ class ScopeTab(tk.Frame):
             self._t_data   = np.empty(0)
             self._ch0_data = np.empty(0)
             self._ch1_data = np.empty(0)
-        self._redraw()
+        self._line0.set_data([], [])
+        self._line1.set_data([], [])
+        try:
+            rng = float(self._var_rng.get())
+        except ValueError:
+            rng = 10.0
+        for ax in self._axes:
+            ax.set_xlim(0, 1)
+            ax.set_ylim(-rng / 2, rng / 2)
+        self._canvas.draw_idle()
 
     # ── Acquisition thread ────────────────────────────────────────────────
 
@@ -389,11 +398,13 @@ class ScopeTab(tk.Frame):
 class AWGTab(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg=BG)
-        self._running  = False
-        self._paused   = False
-        self._thread   = None
-        self._cur_v    = tk.StringVar(value="—")
-        self._freq_str = tk.StringVar(value="—")
+        self._running    = False
+        self._paused     = False
+        self._thread     = None
+        self._cur_v      = tk.StringVar(value="—")
+        self._freq_str   = tk.StringVar(value="—")
+        self._btn_start  = None   # set in _build; updated by pause/resume
+        self._btn_pause  = None
         self._build()
 
     def _build(self):
@@ -439,8 +450,10 @@ class AWGTab(tk.Frame):
         # Buttons
         bf = tk.Frame(left, bg=FRAME_BG)
         bf.pack(anchor="w", padx=8, pady=8)
-        styled_button(bf, "▶  Start", self._start, BTN_RUN,   9).pack(side="left", padx=2)
-        styled_button(bf, "⏸  Pause", self._pause, BTN_PAUSE, 9).pack(side="left", padx=2)
+        self._btn_start = styled_button(bf, "▶  Start", self._start, BTN_RUN,   9)
+        self._btn_start.pack(side="left", padx=2)
+        self._btn_pause = styled_button(bf, "⏸  Pause", self._pause, BTN_PAUSE, 9)
+        self._btn_pause.pack(side="left", padx=2)
         styled_button(bf, "■  Stop",  self._stop,  BTN_STOP,  9).pack(side="left", padx=2)
 
         # Voltage monitor
@@ -492,6 +505,12 @@ class AWGTab(tk.Frame):
     # ── Run logic ─────────────────────────────────────────────────────────
 
     def _start(self):
+        # If paused, resume instead of starting a new thread
+        if self._paused and self._running:
+            self._paused = False
+            self._btn_pause.config(text="⏸  Pause", bg=BTN_PAUSE)
+            self._btn_start.config(text="▶  Start")
+            return
         if self._running:
             return
         try:
@@ -513,12 +532,24 @@ class AWGTab(tk.Frame):
         self._thread.start()
 
     def _pause(self):
+        if not self._running:
+            return
         self._paused = not self._paused
+        if self._paused:
+            self._btn_pause.config(text="▶  Resume", bg=BTN_RUN)
+            self._btn_start.config(text="▶  Resume")
+        else:
+            self._btn_pause.config(text="⏸  Pause", bg=BTN_PAUSE)
+            self._btn_start.config(text="▶  Start")
 
     def _stop(self):
         self._running = False
         self._paused  = False
         self._cur_v.set("—")
+        if self._btn_pause:
+            self._btn_pause.config(text="⏸  Pause", bg=BTN_PAUSE)
+        if self._btn_start:
+            self._btn_start.config(text="▶  Start")
 
     def _loop(self, ch, v_min, v_pp, n_pts, freq, n_scans):
         """
@@ -759,7 +790,12 @@ class DiodeCurrentSweepTab(tk.Frame):
             self._scan_count = 0
         self._scan_label.set("Scans completed: 0")
         self._mini.set_voltage(None)
-        self._redraw()
+        self._line0.set_data([], [])
+        self._line1.set_data([], [])
+        for ax in self._axes:
+            ax.relim()
+            ax.autoscale_view()
+        self._canvas.draw_idle()
 
     def _loop(self, v_min, v_pp, n_pts, freq, n_scans, fs, rng, off):
         """
@@ -1042,7 +1078,12 @@ class BFieldSweepTab(tk.Frame):
             self._scan_count = 0
         self._scan_label.set("Scans completed: 0")
         self._mini.set_voltage(None)
-        self._redraw()
+        for line in self._lines:
+            line.set_data([], [])
+        for ax in self._axes:
+            ax.relim()
+            ax.autoscale_view()
+        self._canvas.draw_idle()
 
     def _loop(self, v_min, v_pp, n_pts, freq, n_scans, rng, off):
         """
