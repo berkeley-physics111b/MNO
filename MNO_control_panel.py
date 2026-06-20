@@ -197,6 +197,7 @@ def configure_adc_triggered(dev, trig_src, fs_hz, n_pts, rng, off):
         dev.analog_in_set_range(ch, rng)
         dev.analog_in_set_offset(ch, off)
     dev.analog_in_set_trigger_source(trig_src)
+    dev.analog_in_set_trigger_position(0.5*n_pts/fs_hz) # put trigger at start of buffer
     dev.analog_in_configure(reconfigure=True, start=True)   # arms, waits
 
 
